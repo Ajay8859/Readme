@@ -1,0 +1,343 @@
+## Self Driving Car Using Object Detection 
+
+In this project we first detect lane then we detect actual object on the road /path .
+
+#### In Lane Detection we uses Canny Edge
+
+Finding Lane Lines on the Road
+The goals/steps of this project are the following:
+
+Make a pipeline that finds lane lines on the road
+The output should be two solid lines, one for the right side, and the other for the left side
+Pipeline (single images)
+My pipeline consisted of the following steps, and the code is called Lane_line_finding.py. I used the following libraries
+
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+import cv2
+Conversion to grayscale using cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+Gaussian smoothing using cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+Edge Detection using Canny algorithm, using cv2.Canny(img, low_threshold, high_threshold)
+Defining the region of interest. This is the area in front of the fixed camera that the lanes appear. I defined an array of four points as the vertices of the polygon, and fill the pixels inside the polygon with
+a color cv2.fillPoly. Then the function returns the image only where the mask pixels are nonzero using cv2.bitwise_and.
+Finding line segments in the binary image using the probabilistic Hough transform using cv2.HoughLinesP.
+The inputs to this function are the distance and angular resolution in pixels of the Hough grid. 
+Also, the minimum number of votes (intersections in Hough grid cell), the minimum number of pixels making up a line, and the maximum gap in pixels between connectable line segments.
+mapping out the full extent of the lane to visualize the result, I defined a function called draw_lines. To draw a single line on the left and right lanes, it extrapolates the lines 
+using np.polyfit and np.poly1d. The left and right lines are distinguished using their slope. Usually, the slope is about 0.6 or -0.6. Having this number, to avoid small white and
+yellow marks on the ground affecting the lines, those who have a slope very different than these usual slopes are ignored. Although this is applied to filter the lines before extrapolating,
+sometimes the extrapolated line may have a slope very different than the usual slope. To avoid reporting wrong lines, the lines after extrapolation are filtered, and those that do not have a
+usual slope are ignored.
+Combining the original image and the output of the previous step using cv2.addWeighted.
+
+
+
+
+###### In Object Detection we basically campare Yolo and F-RCNN
+
+
+YOLO 
+
+YOLO (You Only Look Once) is a very powerful and a fast algorithm in object detection. A strong understanding of the algorithm is essential before we start to code.
+
+Some important papers to start with -
+
+There are three papers you need to go through (Maybe difficult to understand initially, but worth reading it)
+
+You Only Look Once: Unified, Real-Time Object Detection
+YOLO9000: Better, Faster, Stronger
+YOLOv3: An Incremental Improvement
+We are going to use YOLO v3 for our coding purpose in this repository.
+
+Before going to code, we need to download some important YOLO files. It's the folder that's present in this repository as yolo-coco
+
+The three files that needs to be downloaded are -
+
+coco.names
+yolov3.cfg
+yolov3.weights
+Download these files and save it inside a folder. Name the folder anything you wish, but I have named it as yolo-coco just because of the fact that we are going to use the coco dataset objects.
+
+Create a folder images and have some pictures inside it to test the object detection.
+
+The yolo.py has the script to detect the objects in the images.
+
+Make sure you have numpy and opencv installed. If not install them using pip
+
+pip install numpy
+pip install opencv-python
+I am using the numpy version 1.17.4 and opencv version 3.4.2
+
+You can now run the file by giving this command on your command promt
+
+python yolo.py --image images/ipl.jpeg
+You can use any image you want after the --image argument. Make sure you give the right path.
+
+Press q to quit the window of the image showing object detection
+
+
+F - RCNN
+
+
+
+Vehicle Detection
+
+
+Object Detection
+I have spent some time on trying SVM, color and gradient features to detect vehicle, svm has very good training accuracy but when testing in real life the accuracy dropped a lot. As the experience I have in p4 advanced lane finding and lots of reading about it, I think continue this way could make me pass the project video, but not able to handle my own video. All the work was in test folder, test_features.py and test_window.py.
+
+In this project, I spend majority of my time trying to reach out for other options. I like SSD, U-NET, Faster-RCNN, but YOLO was my choice as it's fast while remains good result. The result was good. it succeeded in project video, I then created a video from my iphone which was mount in my car, YOLO performed very well on it.
+
+
+UDacity Sample Data
+YOLO(You Only Look it Once) Object Detection
+You only look once (YOLO) is a state-of-the-art, real-time object detection system. In this project I'm using YAD2K project which is a Keras / Tensorflow implementation of YOLO_v2
+
+please note as we using YAD2K project, we have to install the specific keras version documented in YAD2K project page.
+
+#####YOLO overall structure YOLO_Overall_Structure
+
+How YOLO works
+Image will divided into small grid cell, for example 7 * 7
+Every cell predict number of bounding box, every box contains
+center_point_x
+center_point_y
+bounding_box_width
+bounding_box_height
+object_probability
+Every cell predict the probability of number of classes
+Apply a threshold to all bounding_box
+YOLO_Demo
+
+if we split image into 7 * 7 grid cell, each cell predict 2 bounding boxes, and we have 20 classes want to predict, the total output would be 7 * 7 * （2 * 5 + 20) = 1470 YOLO_Parameters
+
+Pre-process and Data Augmentation
+During training stage, all images has been random scaling and translations of up to 20% of the original image size, also randomly adjust the exposure and saturation of the image by up to a factor of 1.5 in the HSV color space
+
+Before feeding into network, the image will be resize into 416x416, the network will split this image further into 7x7 grid. All image will normalised between 0 to 1 before feed into network.
+
+Feature Extraction
+YOLO network architecture is inspired by the GoogLeNet, it contains 24 convolutional layers followed by 2 full connected layters. Used 1x1 convolutional layers reduced the features space, followed by 3x3 convolution layers.
+
+Just like HOG(Histogram of oriented gradient) or orientation histograms, gradient computation is the first step. HOG using [-1, 0, 1] and [-1, 0. 1]T as filter kernels, however YOLO contains 7x7 and lots of 3x3, 1x1 filters, the parameters of those filter are learned from training process. After the training and if we look at first layer, the edge, direction, colors, shapes start to form as features, this is similary to HOG, as show below CNN-1-Layer
+
+However CNN could stack those kind of layers, the higher the layer the bigger receptive field it have, thus will got better abstraction about the feature CNN-CAR
+
+###Post process
+
+Scale boxes back to original image shape
+All the prediction are based on 418x418 scaled image size, to make the result useful we have to re-scale back to original image shape
+
+Non maximum suppression
+It is possibly network found lots of bounding boxes, in this case we use Non-maximum suppression to get the best result. code yolo_eval method in keras-yolo.py
+
+Non-maximum-suppression
+
+YOLO code in this project
+The main code located in object_detect_yolo.py, all support files are in yolo folder.
+
+yolo/cfg/yolo.cfg defines the neural network structure
+yolo/model_data/coco_classes.txt defines how many classes system can detect
+yolo/model_data/yolo.h5 the weights pre-trained on COCO dataset, follows yolo.cfg neural network structure
+predict method in class YoloDetector is the main entry point, provide a image and it will return back bounding_boxes, scores and classes, for example:
+
+bounding_boxes=[[405, 786, 492, 934]]
+scores=[0.68]
+classes=[2]
+Test Image Output Image
+
+For more test images, please visit object detect folder
+
+Merge YOLO with advanced lane finding
+Class LaneFinder in lane_finder.py has been modified to add one more parameter called object_detection_func, by default, it's a lambda which return a black image object_detection_func=lambda image: np.zeros_like(image)
+
+Undistored image will pass into object_detection_func and been added into final result.
+
+Combined Result Combined Result
+
+##Discussion
+
+Handle picked features not generalize enough
+As the experience in P3 advanced lane finding, and some experience in this project, I think the color, color space, gradient features with SVM or Decision Tress are not generalize enough, I think it's really depends on parameters which human provide, where deep learning approch is more define the lose function and let computer figure out what's the best parameters, as long as we have lots of training data, it can do better then human picked parameters.
+
+YOLO works really well
+The project video works really well as it dosen't have many elements My own video was not focused properly, but still YOLO able to identify vehicles, traffic lights and a person on bicycle Traffic Person
+
+a heat-map or moving average solution would beneficial still
+I noticed that it will miss some object in some frame, if we lower the threshold which resulting more object been detected, at the same time create a heat map based on history data. For example a Car has been detected in last 3 frame, we have very high confidence that it will appear in frame 4 and 5, however if still not detected in frame 6, we can remove it away from our list.
+
+References
+Stanford CS class CS231n: Convolutional Neural Networks
+Paper You Only Look Once: Unified, Real-Time Object Detection
+Model Summary
+____________________________________________________________________________________________________
+Layer (type)                     Output Shape          Param #     Connected to                     
+====================================================================================================
+input_1 (InputLayer)             (None, 416, 416, 3)   0                                            
+____________________________________________________________________________________________________
+convolution2d_1 (Convolution2D)  (None, 416, 416, 32)  864         input_1[0][0]                    
+____________________________________________________________________________________________________
+batchnormalization_1 (BatchNorma (None, 416, 416, 32)  128         convolution2d_1[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_1 (LeakyReLU)          (None, 416, 416, 32)  0           batchnormalization_1[0][0]       
+____________________________________________________________________________________________________
+maxpooling2d_1 (MaxPooling2D)    (None, 208, 208, 32)  0           leakyrelu_1[0][0]                
+____________________________________________________________________________________________________
+convolution2d_2 (Convolution2D)  (None, 208, 208, 64)  18432       maxpooling2d_1[0][0]             
+____________________________________________________________________________________________________
+batchnormalization_2 (BatchNorma (None, 208, 208, 64)  256         convolution2d_2[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_2 (LeakyReLU)          (None, 208, 208, 64)  0           batchnormalization_2[0][0]       
+____________________________________________________________________________________________________
+maxpooling2d_2 (MaxPooling2D)    (None, 104, 104, 64)  0           leakyrelu_2[0][0]                
+____________________________________________________________________________________________________
+convolution2d_3 (Convolution2D)  (None, 104, 104, 128) 73728       maxpooling2d_2[0][0]             
+____________________________________________________________________________________________________
+batchnormalization_3 (BatchNorma (None, 104, 104, 128) 512         convolution2d_3[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_3 (LeakyReLU)          (None, 104, 104, 128) 0           batchnormalization_3[0][0]       
+____________________________________________________________________________________________________
+convolution2d_4 (Convolution2D)  (None, 104, 104, 64)  8192        leakyrelu_3[0][0]                
+____________________________________________________________________________________________________
+batchnormalization_4 (BatchNorma (None, 104, 104, 64)  256         convolution2d_4[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_4 (LeakyReLU)          (None, 104, 104, 64)  0           batchnormalization_4[0][0]       
+____________________________________________________________________________________________________
+convolution2d_5 (Convolution2D)  (None, 104, 104, 128) 73728       leakyrelu_4[0][0]                
+____________________________________________________________________________________________________
+batchnormalization_5 (BatchNorma (None, 104, 104, 128) 512         convolution2d_5[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_5 (LeakyReLU)          (None, 104, 104, 128) 0           batchnormalization_5[0][0]       
+____________________________________________________________________________________________________
+maxpooling2d_3 (MaxPooling2D)    (None, 52, 52, 128)   0           leakyrelu_5[0][0]                
+____________________________________________________________________________________________________
+convolution2d_6 (Convolution2D)  (None, 52, 52, 256)   294912      maxpooling2d_3[0][0]             
+____________________________________________________________________________________________________
+batchnormalization_6 (BatchNorma (None, 52, 52, 256)   1024        convolution2d_6[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_6 (LeakyReLU)          (None, 52, 52, 256)   0           batchnormalization_6[0][0]       
+____________________________________________________________________________________________________
+convolution2d_7 (Convolution2D)  (None, 52, 52, 128)   32768       leakyrelu_6[0][0]                
+____________________________________________________________________________________________________
+batchnormalization_7 (BatchNorma (None, 52, 52, 128)   512         convolution2d_7[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_7 (LeakyReLU)          (None, 52, 52, 128)   0           batchnormalization_7[0][0]       
+____________________________________________________________________________________________________
+convolution2d_8 (Convolution2D)  (None, 52, 52, 256)   294912      leakyrelu_7[0][0]                
+____________________________________________________________________________________________________
+batchnormalization_8 (BatchNorma (None, 52, 52, 256)   1024        convolution2d_8[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_8 (LeakyReLU)          (None, 52, 52, 256)   0           batchnormalization_8[0][0]       
+____________________________________________________________________________________________________
+maxpooling2d_4 (MaxPooling2D)    (None, 26, 26, 256)   0           leakyrelu_8[0][0]                
+____________________________________________________________________________________________________
+convolution2d_9 (Convolution2D)  (None, 26, 26, 512)   1179648     maxpooling2d_4[0][0]             
+____________________________________________________________________________________________________
+batchnormalization_9 (BatchNorma (None, 26, 26, 512)   2048        convolution2d_9[0][0]            
+____________________________________________________________________________________________________
+leakyrelu_9 (LeakyReLU)          (None, 26, 26, 512)   0           batchnormalization_9[0][0]       
+____________________________________________________________________________________________________
+convolution2d_10 (Convolution2D) (None, 26, 26, 256)   131072      leakyrelu_9[0][0]                
+____________________________________________________________________________________________________
+batchnormalization_10 (BatchNorm (None, 26, 26, 256)   1024        convolution2d_10[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_10 (LeakyReLU)         (None, 26, 26, 256)   0           batchnormalization_10[0][0]      
+____________________________________________________________________________________________________
+convolution2d_11 (Convolution2D) (None, 26, 26, 512)   1179648     leakyrelu_10[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_11 (BatchNorm (None, 26, 26, 512)   2048        convolution2d_11[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_11 (LeakyReLU)         (None, 26, 26, 512)   0           batchnormalization_11[0][0]      
+____________________________________________________________________________________________________
+convolution2d_12 (Convolution2D) (None, 26, 26, 256)   131072      leakyrelu_11[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_12 (BatchNorm (None, 26, 26, 256)   1024        convolution2d_12[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_12 (LeakyReLU)         (None, 26, 26, 256)   0           batchnormalization_12[0][0]      
+____________________________________________________________________________________________________
+convolution2d_13 (Convolution2D) (None, 26, 26, 512)   1179648     leakyrelu_12[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_13 (BatchNorm (None, 26, 26, 512)   2048        convolution2d_13[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_13 (LeakyReLU)         (None, 26, 26, 512)   0           batchnormalization_13[0][0]      
+____________________________________________________________________________________________________
+maxpooling2d_5 (MaxPooling2D)    (None, 13, 13, 512)   0           leakyrelu_13[0][0]               
+____________________________________________________________________________________________________
+convolution2d_14 (Convolution2D) (None, 13, 13, 1024)  4718592     maxpooling2d_5[0][0]             
+____________________________________________________________________________________________________
+batchnormalization_14 (BatchNorm (None, 13, 13, 1024)  4096        convolution2d_14[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_14 (LeakyReLU)         (None, 13, 13, 1024)  0           batchnormalization_14[0][0]      
+____________________________________________________________________________________________________
+convolution2d_15 (Convolution2D) (None, 13, 13, 512)   524288      leakyrelu_14[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_15 (BatchNorm (None, 13, 13, 512)   2048        convolution2d_15[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_15 (LeakyReLU)         (None, 13, 13, 512)   0           batchnormalization_15[0][0]      
+____________________________________________________________________________________________________
+convolution2d_16 (Convolution2D) (None, 13, 13, 1024)  4718592     leakyrelu_15[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_16 (BatchNorm (None, 13, 13, 1024)  4096        convolution2d_16[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_16 (LeakyReLU)         (None, 13, 13, 1024)  0           batchnormalization_16[0][0]      
+____________________________________________________________________________________________________
+convolution2d_17 (Convolution2D) (None, 13, 13, 512)   524288      leakyrelu_16[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_17 (BatchNorm (None, 13, 13, 512)   2048        convolution2d_17[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_17 (LeakyReLU)         (None, 13, 13, 512)   0           batchnormalization_17[0][0]      
+____________________________________________________________________________________________________
+convolution2d_18 (Convolution2D) (None, 13, 13, 1024)  4718592     leakyrelu_17[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_18 (BatchNorm (None, 13, 13, 1024)  4096        convolution2d_18[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_18 (LeakyReLU)         (None, 13, 13, 1024)  0           batchnormalization_18[0][0]      
+____________________________________________________________________________________________________
+convolution2d_19 (Convolution2D) (None, 13, 13, 1024)  9437184     leakyrelu_18[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_19 (BatchNorm (None, 13, 13, 1024)  4096        convolution2d_19[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_19 (LeakyReLU)         (None, 13, 13, 1024)  0           batchnormalization_19[0][0]      
+____________________________________________________________________________________________________
+convolution2d_20 (Convolution2D) (None, 13, 13, 1024)  9437184     leakyrelu_19[0][0]               
+____________________________________________________________________________________________________
+batchnormalization_20 (BatchNorm (None, 13, 13, 1024)  4096        convolution2d_20[0][0]           
+____________________________________________________________________________________________________
+space_to_depth_x2 (Lambda)       (None, 13, 13, 2048)  0           leakyrelu_13[0][0]               
+____________________________________________________________________________________________________
+leakyrelu_20 (LeakyReLU)         (None, 13, 13, 1024)  0           batchnormalization_20[0][0]      
+____________________________________________________________________________________________________
+merge_1 (Merge)                  (None, 13, 13, 3072)  0           space_to_depth_x2[0][0]          
+                                                                   leakyrelu_20[0][0]               
+____________________________________________________________________________________________________
+convolution2d_21 (Convolution2D) (None, 13, 13, 1024)  28311552    merge_1[0][0]                    
+____________________________________________________________________________________________________
+batchnormalization_21 (BatchNorm (None, 13, 13, 1024)  4096        convolution2d_21[0][0]           
+____________________________________________________________________________________________________
+leakyrelu_21 (LeakyReLU)         (None, 13, 13, 1024)  0           batchnormalization_21[0][0]      
+____________________________________________________________________________________________________
+convolution2d_22 (Convolution2D) (None, 13, 13, 425)   435625      leakyrelu_21[0][0]               
+====================================================================================================
+Total params: 67,465,609
+Trainable params: 67,445,065
+Non-trainable params: 20,544
+____________________________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
